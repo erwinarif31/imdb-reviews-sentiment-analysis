@@ -1,16 +1,13 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, jsonify, url_for
 import json
 import requests
 import pickle
 import re
-import nltk
-import numpy as np
-import pandas as pd
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
+from imdb import Cinemagoer
+
+ia = Cinemagoer()
 
 headers = {
     "X-RapidAPI-Key": "ef33758c26msh90b77f1145da547p18115fjsnb013a57e8018",
@@ -103,27 +100,38 @@ def index():
         return render_template('index.html', test='')
 
 
-@app.route('/reviews/<title>')
+@app.route('/reviews/<title>', methods=['GET', 'POST'])
 def reviews(title):
-    reviews = getReviews(title)
-    reviews = list(map(str, reviews))
-    clean_reviews = []
-    good_reviews = 0
-    bad_reviews = 0
-    for i in reviews:
-        test_processes = [review_to_words(i)]
-        test_input = tf_idf.transform(test_processes)
-        res = model.predict(test_input)[0]
-        if res == 1:
-            good_reviews += 1
-        else:
-            bad_reviews += 1
 
-    clean_reviews.append(good_reviews + bad_reviews)
-    clean_reviews.append(good_reviews)
-    clean_reviews.append(bad_reviews)
+    # clean_reviews.append(good_reviews + bad_reviews)
+    # clean_reviews.append(good_reviews)
+    # clean_reviews.append(bad_reviews)
+    if request.method == 'POST':
+        movie = ia.get_movie(title[2:])
+        plot = movie['plot'][0]
 
-    return render_template('reviews.html', reviews=clean_reviews)
+        genres = movie['genres']
+
+        image = request.form['image']
+        movieTitle = request.form['title']
+        year = request.form['year']
+
+        reviews = getReviews(title)
+        reviews = list(map(str, reviews))
+        good_reviews = 0
+        bad_reviews = 0
+        for i in reviews:
+            test_processes = [review_to_words(i)]
+            test_input = tf_idf.transform(test_processes)
+            res = model.predict(test_input)[0]
+            if res == 1:
+                good_reviews += 1
+            else:
+                bad_reviews += 1
+
+        total_reviews = good_reviews + bad_reviews
+        good_reviews_perc = round((good_reviews/total_reviews) * 100)
+        return render_template('reviews.html', image=image, plot=plot, title=movieTitle, year=year, genres=genres, total=total_reviews, perc=good_reviews_perc)
 
 
 if __name__ == "__main__":
