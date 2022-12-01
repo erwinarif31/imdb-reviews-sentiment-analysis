@@ -132,7 +132,3 @@ def reviews(title):
         total_reviews = good_reviews + bad_reviews
         good_reviews_perc = round((good_reviews/total_reviews) * 100)
         return render_template('reviews.html', image=image, plot=plot, title=movieTitle, year=year, genres=genres, total=total_reviews, perc=good_reviews_perc)
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
